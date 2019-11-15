@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Net.Sockets;
 
 namespace FtpProjectServer {
     public static class PacketHandler{
@@ -18,11 +17,12 @@ namespace FtpProjectServer {
                 }
                 case 1:{
                     //receives the file size so the server can keep track of transfer progress
-                    long fileSizeStr;
+                    string fileSizeStr = "";
                     for(int i = 0; i < packet.Length; i++){
                         fileSizeStr += (char)packet[i];
                     }
                     client.fileSize = long.Parse(fileSizeStr);
+                    break;
                 }
                 case 2:{
                     byte[] fileData = new byte[packet.Length - 1];
@@ -38,6 +38,7 @@ namespace FtpProjectServer {
                     }
                     Console.WriteLine(message);
                     client.Disconnect();
+                    break;
                 }
             }
         }
