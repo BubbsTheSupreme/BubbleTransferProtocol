@@ -23,17 +23,32 @@ namespace FtpProjectClient {
                 byte[] data = Encoding.ASCII.GetBytes(fileName);
                 Packet packet = new Packet((ushort)data.Length).WritePacketId(0).WritePacketPayload(data);
                 client.Send(packet.Finalize());
+                FileInfo f = new FileInfo(fileName); 
+                string fileSize = f.Length.ToString(); //gets the file size and sets it as a string
+                data = Encoding.ASCII.GetBytes(fileSize);
+                packet = new Packet((ushort)data.Length).WritePacketId(1).WritePacketPayload(data);
+                client.Send(packet.Finalize());
                 int bytesRead;
                 byte[] fileContents;
-                byte[] fileData = new byte[1024];
-                using(FileStream file = File.OpenRead(fileName)){
-                    while((bytesRead = file.Read(fileData, 0, fileData.Length)) > 0){
-                        fileContents = new byte[bytesRead];
-                        Array.Copy(fileData, 0, fileContents, 0, fileContents.Length);
-                        Packet filePacket = new Packet((ushort)fileContents.Length).WritePacketId(2).WritePacketPayload(fileContents);
-                        client.Send(filePacket.Finalize());
+                byte[] fileData = new byte[32768]; //creates a 32kb array for file contents
+                try{
+                    using(FileStream file = File.OpenRead(fileName)){ //add a progress bar for sending progress too
+                        while((bytesRead = file.Read(fileData, 0, fileData.Length)) > 0){
+                            fileContents = new byte[bytesRead];
+                            Array.Copy(fileData, 0, fileContents, 0, fileContents.Length);
+                            Packet filePacket = new Packet((ushort)fileContents.Length).WritePacketId(2).WritePacketPayload(fileContents);
+                            client.Send(filePacket.Finalize());
+                        }
                     }
                 }
+                catch(FileNotFoundException){
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"The file {fileName} not found");
+                    Console.ResetColor();
+                }
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("File Transfer Complete.");
+                Console.ResetColor();
                 data = Encoding.ASCII.GetBytes("File Transfer Complete.");
                 packet = new Packet((ushort)data.Length).WritePacketId(3).WritePacketPayload(data);
                 client.Send(packet.Finalize());

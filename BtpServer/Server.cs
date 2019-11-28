@@ -1,28 +1,27 @@
 using System;
-using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 
 
 namespace FtpProjectServer{
 
-    public class Client{
+    public class Server { 
         public Socket Socket;
         public string fileName;
         public long fileSize; 
 
-        public Client(Socket socket){
-            Socket = socket;
+        public Server(Socket socket) {
+            Socket = socket; 
         }
 
-        public void Send(byte[] packet){
-            try{
+        public void Send(byte[] packet) {
+            try {
                 Socket.Send(packet);
             }
-            catch(Exception e){
-                Console.WriteLine($"Error occurred: {e}");
+            catch(SocketException) {
+                Console.WriteLine("Communication error has occurred. Disconnecting now.");
+                Disconnect();
             }
         }
 
@@ -30,8 +29,8 @@ namespace FtpProjectServer{
             try {
                 Socket.Shutdown(SocketShutdown.Both);
             }
-            catch(Exception e){
-                Console.WriteLine($"Error occurred: {e}");
+            catch(Exception) {
+                Console.WriteLine($"Error occurred while trying to disconnect");
             }
             finally {
                 Socket.Close();
@@ -53,10 +52,10 @@ namespace FtpProjectServer{
                 socket.Bind(clientEndPoint);
                 Console.WriteLine("Listening for connections..");
                 socket.Listen(15);
-                var clientSocket = socket.Accept();
-                var client = new Client(clientSocket);
+                Socket clientSocket = socket.Accept();
+                Server server = new Server(clientSocket);
                 Console.WriteLine("Connected!");
-                recvThread.Start(client);
+                recvThread.Start(server);
             }
             catch(Exception e){
                 Console.WriteLine($"Error occurred: {e}");
@@ -64,23 +63,23 @@ namespace FtpProjectServer{
         }
 
         public void Receive(object args){
-            var client = (Client)args;
+            var server = (Server)args;
             try{
                 while(true){
-                    byte[] buffer = new byte[2];
+                    byte[] buffer = new byte[2]; // 2 is to let the buffer only let the size in when receiving 
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("Starting to receive packets..");
                     Console.ResetColor();
-                    int receivePacket = client.Socket.Receive(buffer);
-                    ushort requiredBytes = (ushort)(BitConverter.ToUInt16(buffer, 0) - 2);
-                    buffer = new byte[requiredBytes];
+                    int receivePacket = server.Socket.Receive(buffer);
+                    ushort requiredBytes = (ushort)(BitConverter.ToUInt16(buffer, 0) - 2); //casting because 2 is an int  
+                    buffer = new byte[requiredBytes]; //uses 16bit size variable to create a new buffer with the size of the packet to receive the rest of the packet with
                     int received = 0;
                     int size;
                     while(received < requiredBytes){
-                        size = buffer.Length - received;
-                        received += client.Socket.Receive(buffer, received, size, SocketFlags.None);
+                        size = buffer.Length - received; //subtracts how much was received from the total so it knows how much to receive in the current loop
+                        received += server.Socket.Receive(buffer, received, size, SocketFlags.None);
                     }
-                    PacketHandler.Process(client, buffer);
+                    PacketHandler.Process(server, buffer);
                 }
             }
             catch(Exception e){
