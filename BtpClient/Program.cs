@@ -21,22 +21,22 @@ namespace FtpProjectClient {
                 Console.Write("> ");
                 string fileName = Console.ReadLine();
                 byte[] data = Encoding.ASCII.GetBytes(fileName);
-                Packet packet = new Packet((ushort)data.Length).WritePacketId(0).WritePacketPayload(data);
+                Packet packet = new Packet((uint)data.Length).WritePacketId(0).WritePacketPayload(data);
                 client.Send(packet.Finalize());
                 FileInfo f = new FileInfo(fileName); 
                 string fileSize = f.Length.ToString(); //gets the file size and sets it as a string
                 data = Encoding.ASCII.GetBytes(fileSize);
-                packet = new Packet((ushort)data.Length).WritePacketId(1).WritePacketPayload(data);
+                packet = new Packet((uint)data.Length).WritePacketId(1).WritePacketPayload(data);
                 client.Send(packet.Finalize());
                 int bytesRead;
                 byte[] fileContents;
-                byte[] fileData = new byte[32768]; //creates a 32kb array for file contents
-                try{
+                byte[] fileData = new byte[8388608]; //creates a 8MB array for file contents
+                try {
                     using(FileStream file = File.OpenRead(fileName)){ //add a progress bar for sending progress too
                         while((bytesRead = file.Read(fileData, 0, fileData.Length)) > 0){
                             fileContents = new byte[bytesRead];
                             Array.Copy(fileData, 0, fileContents, 0, fileContents.Length);
-                            Packet filePacket = new Packet((ushort)fileContents.Length).WritePacketId(2).WritePacketPayload(fileContents);
+                            Packet filePacket = new Packet((uint)fileContents.Length).WritePacketId(2).WritePacketPayload(fileContents);
                             client.Send(filePacket.Finalize());
                         }
                     }
@@ -50,7 +50,7 @@ namespace FtpProjectClient {
                 Console.WriteLine("File Transfer Complete.");
                 Console.ResetColor();
                 data = Encoding.ASCII.GetBytes("File Transfer Complete.");
-                packet = new Packet((ushort)data.Length).WritePacketId(3).WritePacketPayload(data);
+                packet = new Packet((uint)data.Length).WritePacketId(3).WritePacketPayload(data);
                 client.Send(packet.Finalize());
                 client.Disconnect();
             }
