@@ -13,8 +13,19 @@ namespace FtpProjectServer {
             conf.ConfigWriter(path);
         }
         static void Main(string[] args){
-            FtpServer server = new FtpServer();
-            server.StartListening(12345);
+            if(args.Length > 0){
+                if(args[0] == "-c"){
+                    string path = args[1];
+                    UpdatePath(path);
+                }
+                else if(args[0] == "-h"){
+                    Help();
+                }
+            }
+            else{
+                FtpServer server = new FtpServer();
+                server.StartListening(12345);
+            }
         }
     }
 }

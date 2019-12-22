@@ -3,6 +3,9 @@ using System.IO;
 
 namespace FtpProjectServer {
     public static class PacketHandler{
+
+        static ProgressBar progress = new ProgressBar();
+
         public static void Process(Server server, byte[] packet){
             Config conf = new Config();
             var packetId = packet[0];
@@ -26,6 +29,8 @@ namespace FtpProjectServer {
                 } //we first convert the long to a string then we send it like we would the file name but then we reconstruct the string and parse the long from it
                 case 2: { //id 2 handles the file contents
                     byte[] fileData = new byte[packet.Length - 1];
+                    server.bytesWritten += fileData.Length;
+                    progress.Report((double) server.bytesWritten / server.fileSize);
                     Array.Copy(packet, 1, fileData, 0, fileData.Length); //used array.copy() to create a new array without the id and only the payload
                     try{
                         using(FileStream newFile = new FileStream(server.fileName, FileMode.Append)) //Creates and uses a filestream that takes the buffer of bytes received and writes them to a file
@@ -41,7 +46,9 @@ namespace FtpProjectServer {
                     for(int i = 1; i < packet.Length; i++){
                         message += (char)packet[i];
                     }
+                    Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(message);
+                    Console.ResetColor(); 
                     server.Disconnect();
                     break;
                 }
@@ -49,6 +56,3 @@ namespace FtpProjectServer {
         }
     }
 }
-                    // server.bytesWritten += fileData.Length;
-                    // using(ProgressBar progress = new ProgressBar())
-                    //     progress.Report((double) server.bytesWritten / server.fileSize);

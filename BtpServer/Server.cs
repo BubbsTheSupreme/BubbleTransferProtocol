@@ -65,23 +65,23 @@ namespace FtpProjectServer{
             try{
                 while(true){
                     byte[] buffer = new byte[4]; // 4 is to let the buffer only let the size in when receiving 
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Starting to receive packets..");
-                    Console.ResetColor();
                     int receivePacket = server.Socket.Receive(buffer);
-                    uint requiredBytes = (uint)(BitConverter.ToUInt32(buffer, 0) - 2); //casting because 2 is an int  
+                    uint requiredBytes = (uint)(BitConverter.ToUInt32(buffer, 0) - 4); //casting because 2 is an int  
                     buffer = new byte[requiredBytes]; //uses 16bit size variable to create a new buffer with the size of the packet to receive the rest of the packet with
                     int received = 0;
                     int size;
-                    while(received < requiredBytes){
+                    while(received < requiredBytes) {
                         size = buffer.Length - received; //subtracts how much was received from the total so it knows how much to receive in the current loop
                         received += server.Socket.Receive(buffer, received, size, SocketFlags.None);
                     }
                     PacketHandler.Process(server, buffer);
                 }
             }
-            catch(Exception e){
-                Console.WriteLine($"Error occurred: {e}");
+            catch(ObjectDisposedException){
+                Console.WriteLine("Disconnecting.");
+            }
+            catch(SocketException se){
+                Console.WriteLine($"Error occurred while receiving, {se}");
             }
         }
     }
